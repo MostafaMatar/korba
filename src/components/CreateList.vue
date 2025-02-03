@@ -74,6 +74,42 @@
         {{ error }}
       </p>
     </div>
+
+    <!-- Share Modal -->
+    <div v-if="showShareModal" class="modal-overlay" @click="closeModal">
+      <div class="modal" @click.stop>
+        <h2>List Created Successfully! 🎉</h2>
+        <p class="modal-description">
+          Your grocery list has been created. You can now share it with others or view it directly.
+        </p>
+        
+        <div class="share-url-container">
+          <input 
+            ref="shareUrlInput"
+            type="text"
+            readonly
+            :value="shareUrl"
+            class="share-url-input"
+          >
+          <button 
+            @click="copyShareUrl" 
+            class="copy-button"
+            :class="{ copied: urlCopied }"
+          >
+            {{ urlCopied ? 'Copied!' : 'Copy Link' }}
+          </button>
+        </div>
+
+        <div class="modal-actions">
+          <button class="view-list-button" @click="viewList">
+            View List
+          </button>
+          <button class="close-button" @click="closeModal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -104,7 +140,15 @@ export default {
       },
       items: [],
       saving: false,
-      error: null
+      error: null,
+      showShareModal: false,
+      savedListId: null,
+      urlCopied: false
+    }
+  },
+  computed: {
+    shareUrl() {
+      return `${window.location.origin}/list/${this.savedListId}`
     }
   },
   methods: {
@@ -137,24 +181,47 @@ export default {
         const list = await createList(this.listName)
         
         // Then add all items
-        /*const items = */await addItems(list.id, this.items)
+        await addItems(list.id, this.items)
         
-        // Navigate to the view list page
-        this.$router.push({
-          name: 'view-list',
-          params: { 
-            id: list.id
-          }
-        })
+        // Show share modal instead of immediate navigation
+        this.savedListId = list.id
+        this.showShareModal = true
       } catch (err) {
         console.error('Failed to save list:', err)
         this.error = 'Failed to save list. Please try again.'
+      } finally {
         this.saving = false
       }
     },
     getCategoryLabel(categoryValue) {
       const category = this.categories.find(c => c.value === categoryValue)
       return category ? category.label : categoryValue
+    },
+    async copyShareUrl() {
+      try {
+        await navigator.clipboard.writeText(this.shareUrl)
+        this.urlCopied = true
+        setTimeout(() => {
+          this.urlCopied = false
+        }, 2000)
+      } catch (err) {
+        console.error('Failed to copy URL:', err)
+      }
+    },
+    viewList() {
+      this.$router.push({
+        name: 'view-list',
+        params: { id: this.savedListId }
+      })
+    },
+    closeModal() {
+      this.showShareModal = false
+      // Reset state
+      this.savedListId = null
+      this.urlCopied = false
+      // Clear form for new list
+      this.listName = ''
+      this.items = []
     }
   }
 }
@@ -321,6 +388,97 @@ input[type="text"] {
   color: #ff4444;
   margin-top: 1rem;
   text-align: center;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.modal h2 {
+  color: #4CAF50;
+  margin-bottom: 1rem;
+}
+
+.modal-description {
+  color: #666;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.share-url-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.share-url-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: #f5f5f5;
+}
+
+.copy-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  min-width: 100px;
+  transition: background-color 0.3s;
+}
+
+.copy-button.copied {
+  background-color: #45a049;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.view-list-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.close-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #f5f5f5;
+  color: #666;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 h1 {
