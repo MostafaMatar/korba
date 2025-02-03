@@ -1,15 +1,65 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="description" content="Korba - Smart grocery list app for efficient shopping. Create, organize, and share grocery lists with ease. Categorized items, offline support, and real-time updates.">
+    <meta name="keywords" content="grocery list, shopping list, grocery app, smart shopping, grocery organizer">
+    <meta name="author" content="Korba">
+    <meta name="robots" content="index, follow">
+    
+    <!-- OpenGraph Meta Tags -->
+    <meta property="og:title" content="Korba - Smart Grocery List App">
+    <meta property="og:description" content="Create and manage your grocery lists with ease. Features category organization, offline support, and real-time updates.">
+    <meta property="og:image" content="<%= BASE_URL %>img/icons/android-chrome-512x512.png">
+    <meta property="og:url" content="https://korba-app.com">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Korba - Smart Grocery List App">
+    <meta name="twitter:description" content="Create and manage your grocery lists with ease. Features category organization, offline support, and real-time updates.">
+    <meta name="twitter:image" content="<%= BASE_URL %>img/icons/android-chrome-512x512.png">
+    
+    <!-- PWA icons -->
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title><%= htmlWebpackPlugin.options.title %></title>
+    <link rel="apple-touch-icon" href="<%= BASE_URL %>img/icons/android-chrome-192x192.png">
+    <link rel="mask-icon" href="<%= BASE_URL %>img/icons/android-chrome-maskable-192x192.png" color="#4CAF50">
+    
+    <!-- PWA manifest -->
+    <link rel="manifest" href="<%= BASE_URL %>manifest.json">
+    
+    <title>Korba - Smart Grocery List App | Organize Shopping Lists</title>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "http://schema.org",
+      "@type": "MobileApplication",
+      "name": "Korba",
+      "description": "Smart grocery list app for efficient shopping. Create, organize, and share grocery lists with ease.",
+      "applicationCategory": "Lifestyle",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Create and manage grocery lists",
+        "Categorize items automatically",
+        "Offline support",
+        "Real-time updates",
+        "Share lists with others"
+      ]
+    }
+    </script>
   </head>
   <body>
     <noscript>
-      <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+      <strong>We're sorry but Korba doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
     <div id="app"></div>
     <!-- built files will be auto injected -->

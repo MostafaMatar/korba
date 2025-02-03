@@ -162,7 +162,7 @@ export default {
 
 <style scoped>
 .create-list {
-  max-width: 600px;
+  max-width: 800px;
   margin: 2rem auto;
   padding: 0 1rem;
 }

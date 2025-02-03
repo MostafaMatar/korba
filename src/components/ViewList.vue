@@ -10,51 +10,55 @@
         </div>
       </div>
 
-      <ul class="items-list">
-        <li v-for="item in list.items" :key="item.id" 
-            :class="['item', { 'purchased': item.purchased }]">
-          <div class="item-content">
-            <label class="checkbox-container">
-              <input 
-                type="checkbox" 
-                v-model="item.purchased"
-                @change="updatePurchased(item)"
-              >
-              <span class="checkmark"></span>
-            </label>
-            
-            <div class="item-details">
-              <div class="item-main">
-                <span class="item-name">{{ item.name }}</span>
-                <span class="item-category">{{ getCategoryLabel(item.category) }}</span>
-                <span class="item-quantity">Qty: {{ item.quantity }}</span>
-                <span v-if="item.comment" class="item-comment">Note: {{ item.comment }}</span>
+      <div class="category-sections">
+        <div v-for="category in categorizedItems" :key="category.value" class="category-section">
+          <h2 class="category-title">{{ category.label }}</h2>
+          <ul class="items-list">
+            <li v-for="item in category.items" :key="item.id" 
+                :class="['item', { 'purchased': item.purchased }]">
+              <div class="item-content">
+                <label class="checkbox-container">
+                  <input 
+                    type="checkbox" 
+                    v-model="item.purchased"
+                    @change="updatePurchased(item)"
+                  >
+                  <span class="checkmark"></span>
+                </label>
+                
+                <div class="item-details">
+                  <div class="item-main">
+                    <span class="item-name">{{ item.name }}</span>
+                    <span class="item-quantity">Qty: {{ item.quantity }}</span>
+                    <span v-if="item.comment" class="item-comment">Note: {{ item.comment }}</span>
+                  </div>
+                  
+                  <div v-if="!item.purchased" class="item-reply">
+                    <input 
+                      type="text" 
+                      v-model="item.reply"
+                      placeholder="Add a reply (e.g., 'Out of stock')"
+                      @keyup.enter="saveReply(item)"
+                    >
+                    <button 
+                      @click="saveReply(item)"
+                      :disabled="!item.reply?.trim() || item.savingReply"
+                      class="reply-button"
+                    >
+                      {{ item.savingReply ? 'Saving...' : 'Add Reply' }}
+                    </button>
+                  </div>
+                  
+                  <div v-if="item.reply" class="reply-message">
+                    <span class="reply-icon">↳</span>
+                    {{ item.reply }}
+                  </div>
+                </div>
               </div>
-              
-              <div v-if="!item.purchased" class="item-reply">
-                <input 
-                  type="text" 
-                  v-model="item.reply"
-                  placeholder="Add a reply (e.g., 'Out of stock')"
-                  @keyup.enter="saveReply(item)"
-                >
-                <button 
-                  @click="saveReply(item)"
-                  :disabled="!item.reply?.trim() || item.savingReply"
-                  class="reply-button"
-                >
-                  {{ item.savingReply ? 'Saving...' : 'Add Reply' }}
-                </button>
-              </div>
-              
-              <div v-if="item.reply" class="reply-message">
-                <span class="reply-icon">↳</span>
-                {{ item.reply }}
-              </div>
-            </div>
-          </div>
-        </li>
-      </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -108,6 +112,31 @@ export default {
   computed: {
     completedItems() {
       return this.list.items.filter(item => item.purchased).length
+    },
+    categorizedItems() {
+      if (!this.list?.items) return []
+      
+      // Group items by category
+      const grouped = this.list.items.reduce((acc, item) => {
+        const category = this.categories.find(c => c.value === item.category) || { value: 'other', label: '📦 Other' }
+        if (!acc[category.value]) {
+          acc[category.value] = {
+            label: category.label,
+            items: []
+          }
+        }
+        acc[category.value].items.push(item)
+        return acc
+      }, {})
+      
+      // Convert to array and sort by category label
+      return Object.entries(grouped)
+        .map(([value, data]) => ({
+          value,
+          label: data.label,
+          items: data.items
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label))
     }
   },
   methods: {
@@ -178,6 +207,18 @@ export default {
 .list-stats {
   color: #666;
   font-size: 0.9rem;
+}
+
+.category-section {
+  margin-bottom: 2rem;
+}
+
+.category-title {
+  color: #4CAF50;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #4CAF50;
 }
 
 .items-list {
@@ -267,12 +308,6 @@ export default {
 .item-name {
   font-weight: bold;
   min-width: 150px;
-}
-
-.item-category {
-  color: #4CAF50;
-  font-weight: 500;
-  min-width: 120px;
 }
 
 .item-quantity {
