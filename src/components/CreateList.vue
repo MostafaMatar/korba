@@ -267,7 +267,8 @@ input[type="text"] {
 
 .add-item-form {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
@@ -280,6 +281,7 @@ input[type="text"] {
 
 .add-item-form input[type="text"] {
   flex: 1;
+  min-width: 200px;
 }
 
 .category-select {
@@ -288,39 +290,58 @@ input[type="text"] {
   border-radius: 4px;
   font-size: 1rem;
   background-color: white;
+  flex: 1;
   min-width: 150px;
 }
 
 .quantity-input {
   width: 80px;
+  min-width: unset;
 }
 
 .comment-input {
-  width: 200px;
+  flex: 1;
+  min-width: 200px;
+}
+
+@media (max-width: 600px) {
+  .add-item-form {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .add-item-form input,
+  .category-select {
+    width: 100%;
+  }
+  
+  .quantity-input {
+    width: 100%;
+  }
 }
 
 .item-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   flex: 1;
   flex-wrap: wrap;
 }
 
 .item-name {
   font-weight: bold;
-  min-width: 150px;
+  flex: 1;
+  min-width: 200px;
 }
 
 .item-category {
   color: #4CAF50;
   font-weight: 500;
-  min-width: 120px;
 }
 
 .item-quantity {
   color: #666;
-  min-width: 80px;
+  white-space: nowrap;
 }
 
 .item-comment {
@@ -406,12 +427,33 @@ input[type="text"] {
 
 .modal {
   background-color: white;
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 90%;
+  width: 95%;
   max-width: 500px;
   text-align: center;
+  margin: 1rem;
+}
+
+@media (max-width: 600px) {
+  .modal {
+    padding: 1rem;
+  }
+  
+  .share-url-container {
+    flex-direction: column;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .view-list-button,
+  .close-button {
+    width: 100%;
+  }
 }
 
 .modal h2 {

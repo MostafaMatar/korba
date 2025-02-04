@@ -173,8 +173,18 @@ export default {
 <style scoped>
 .view-list {
   max-width: 800px;
-  margin: 2rem auto;
+  margin: 1rem auto;
   padding: 0 1rem;
+}
+
+@media (max-width: 600px) {
+  .view-list {
+    margin: 0.5rem auto;
+  }
+  
+  .list-container {
+    padding: 1rem;
+  }
 }
 
 .loading,
@@ -239,7 +249,17 @@ export default {
 .item-content {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 0.75rem;
+}
+
+@media (max-width: 600px) {
+  .item-content {
+    gap: 0.5rem;
+  }
+  
+  .checkbox-container {
+    margin-top: 0.1rem;
+  }
 }
 
 .checkbox-container {
@@ -300,19 +320,32 @@ export default {
 
 .item-main {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  align-items: flex-start;
+  gap: 0.5rem;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .item-name {
   font-weight: bold;
-  min-width: 150px;
+  flex: 1;
+  min-width: 200px;
 }
 
 .item-quantity {
   color: #666;
-  min-width: 80px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .item-main {
+    gap: 0.25rem;
+  }
+  
+  .item-name {
+    min-width: unset;
+    width: 100%;
+  }
 }
 
 .item-comment {
@@ -332,6 +365,7 @@ export default {
   margin-top: 0.5rem;
   display: flex;
   gap: 0.5rem;
+  width: 100%;
 }
 
 .item-reply input {
@@ -340,6 +374,18 @@ export default {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 0.9rem;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .item-reply {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .reply-button {
+    width: 100%;
+  }
 }
 
 .reply-button {
@@ -363,6 +409,27 @@ export default {
   font-size: 0.9rem;
   padding-left: 1rem;
   border-left: 2px solid #4CAF50;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .category-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  .item {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .item-details {
+    width: 100%;
+  }
+  
+  .item-comment {
+    width: 100%;
+    margin-top: 0.25rem;
+  }
 }
 
 .reply-icon {
