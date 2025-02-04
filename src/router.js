@@ -23,7 +23,8 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  // Use empty string as base URL if process.env.BASE_URL is undefined
+  history: createWebHistory(process.env.BASE_URL || ''),
   routes
 })
 
