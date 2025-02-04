@@ -1,6 +1,6 @@
 <template>
   <footer>
-    <p>Copyrights reserved 2025</p>
+    <p>Copyrights reserved, contact owner via email engmostafamatar@gmail.com</p>
     <p><a href="https://github.com/MostafaMatar/korba">View source code on Github</a></p>
   </footer>
 </template>
