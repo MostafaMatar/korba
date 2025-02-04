@@ -1,4 +1,7 @@
 # korba
+A grocery list sharing web application that allows creating and sharing grocery lists via links without sign up or downloads necessary
+
+[website]: https://www.korba.app/
 
 ## Project setup
 ```
