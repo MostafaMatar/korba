@@ -148,14 +148,17 @@ export default {
   },
   computed: {
     shareUrl() {
-      return `${window.location.origin}/list/${this.savedListId}`
+      return `${window.location.origin}/view-list/${this.savedListId}`
     }
   },
   methods: {
     addItem() {
-      if (this.newItemForm.name.trim() && this.newItemForm.category) {
+      const trimmedName = this.newItemForm.name.trim();
+      if (trimmedName && this.newItemForm.category) {
+        // Convert to char codes and back to ensure proper string encoding
+        const itemName = [...trimmedName].map(char => String.fromCharCode(char.charCodeAt(0))).join('');
         this.items.push({
-          name: this.newItemForm.name.trim(),
+          name: itemName,
           category: this.newItemForm.category,
           quantity: this.newItemForm.quantity,
           comment: this.newItemForm.comment.trim()

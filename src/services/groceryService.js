@@ -43,8 +43,11 @@ export async function createList(name) {
  * @returns {Promise<GroceryItem[]>}
  */
 export async function addItems(listId, items) {
+  // Pre-process items to handle the reversal issue
   const itemsWithListId = items.map(item => ({
     ...item,
+    // Reverse the name string to counteract the reversal issue
+    name: item.name.split('').reverse().join(''),
     list_id: listId
   }))
 
