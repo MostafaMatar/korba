@@ -1,6 +1,16 @@
 <template>
   <div class="create-list">
     <h1>Create New Grocery List</h1>
+    
+    <!-- Basic Features Banner for Unauthenticated Users -->
+    <div v-if="!isAuthenticated" class="basic-features-banner">
+      <p>
+        You're using basic features. 
+        <router-link to="/register" class="upgrade-link">Upgrade to Pro</router-link> 
+        to save lists and access advanced features!
+      </p>
+    </div>
+
     <div class="list-form">
       <div class="form-group">
         <label for="listName">List Name</label>
@@ -62,20 +72,72 @@
         </ul>
       </div>
 
-      <button 
-        class="save-button"
-        @click="saveList"
-        :disabled="!listName.trim() || items.length === 0 || saving"
-      >
-        {{ saving ? 'Saving...' : 'Save List' }}
-      </button>
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button 
+          v-if="isAuthenticated"
+          class="save-button"
+          @click="saveList"
+          :disabled="!listName.trim() || items.length === 0 || saving"
+        >
+          {{ saving ? 'Saving...' : 'Save List' }}
+        </button>
+
+        <button 
+          v-else
+          class="print-button"
+          @click="printList"
+          :disabled="!listName.trim() || items.length === 0"
+        >
+          Print List
+        </button>
+
+        <router-link 
+          v-if="!isAuthenticated" 
+          to="/register" 
+          class="upgrade-button"
+        >
+          Upgrade to Save Lists
+        </router-link>
+      </div>
 
       <p v-if="error" class="error-message">
         {{ error }}
       </p>
     </div>
 
-    <!-- Share Modal -->
+    <!-- Print Preview Modal -->
+    <div v-if="showPrintModal" class="modal-overlay" @click="closePrintModal">
+      <div class="modal print-modal" @click.stop>
+        <h2>Print Preview</h2>
+        <div class="print-content" ref="printContent">
+          <h3>{{ listName }}</h3>
+          <div class="print-items">
+            <template v-for="category in groupedItems" :key="category.name">
+              <h4>{{ category.label }}</h4>
+              <ul>
+                <li v-for="item in category.items" :key="item.name">
+                  {{ item.name }} ({{ item.quantity }})
+                  <span v-if="item.comment" class="print-comment">
+                    - {{ item.comment }}
+                  </span>
+                </li>
+              </ul>
+            </template>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button @click="performPrint" class="print-action-btn">
+            Print
+          </button>
+          <button @click="closePrintModal" class="close-button">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Share Modal (for authenticated users) -->
     <div v-if="showShareModal" class="modal-overlay" @click="closeModal">
       <div class="modal" @click.stop>
         <h2>List Created Successfully! 🎉</h2>
@@ -115,6 +177,7 @@
 
 <script>
 import { createList, addItems } from '../services/groceryService'
+import { supabase } from '../lib/supabase'
 
 export default {
   name: 'CreateList',
@@ -142,20 +205,31 @@ export default {
       saving: false,
       error: null,
       showShareModal: false,
+      showPrintModal: false,
       savedListId: null,
-      urlCopied: false
+      urlCopied: false,
+      isAuthenticated: false
     }
+  },
+  async created() {
+    const { data: { session } } = await supabase.auth.getSession()
+    this.isAuthenticated = !!session
   },
   computed: {
     shareUrl() {
       return `${window.location.origin}/view-list/${this.savedListId}`
+    },
+    groupedItems() {
+      return this.categories.map(category => ({
+        ...category,
+        items: this.items.filter(item => item.category === category.value)
+      })).filter(category => category.items.length > 0)
     }
   },
   methods: {
     addItem() {
       const trimmedName = this.newItemForm.name.trim();
       if (trimmedName && this.newItemForm.category) {
-        // Convert to char codes and back to ensure proper string encoding
         const itemName = [...trimmedName].map(char => String.fromCharCode(char.charCodeAt(0))).join('');
         this.items.push({
           name: itemName,
@@ -176,17 +250,17 @@ export default {
       this.items.splice(index, 1)
     },
     async saveList() {
+      if (!this.isAuthenticated) {
+        this.error = 'You need a Pro account to save lists'
+        return
+      }
+
       this.saving = true
       this.error = null
 
       try {
-        // First create the list
         const list = await createList(this.listName)
-        
-        // Then add all items
         await addItems(list.id, this.items)
-        
-        // Show share modal instead of immediate navigation
         this.savedListId = list.id
         this.showShareModal = true
       } catch (err) {
@@ -219,12 +293,19 @@ export default {
     },
     closeModal() {
       this.showShareModal = false
-      // Reset state
       this.savedListId = null
       this.urlCopied = false
-      // Clear form for new list
       this.listName = ''
       this.items = []
+    },
+    printList() {
+      this.showPrintModal = true
+    },
+    closePrintModal() {
+      this.showPrintModal = false
+    },
+    performPrint() {
+      window.print()
     }
   }
 }
@@ -237,6 +318,25 @@ export default {
   padding: 0 1rem;
 }
 
+.basic-features-banner {
+  background-color: #FFF3E0;
+  border: 1px solid #FFB74D;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.upgrade-link {
+  color: #F57C00;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.upgrade-link:hover {
+  text-decoration: underline;
+}
+
 .list-form {
   background-color: white;
   padding: 2rem;
@@ -244,6 +344,73 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.save-button, .print-button, .upgrade-button {
+  flex: 1;
+  padding: 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+}
+
+.save-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.print-button {
+  background-color: #2196F3;
+  color: white;
+}
+
+.upgrade-button {
+  background-color: #F57C00;
+  color: white;
+  display: inline-block;
+}
+
+.save-button:disabled,
+.print-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Print modal specific styles */
+.print-modal {
+  max-width: 600px;
+}
+
+.print-content {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.print-items h4 {
+  color: #2E7D32;
+  margin: 1rem 0 0.5rem;
+}
+
+.print-items ul {
+  list-style: none;
+  padding-left: 1rem;
+}
+
+.print-comment {
+  color: #666;
+  font-style: italic;
+}
+
+/* Existing styles... */
 .form-group {
   margin-bottom: 2rem;
 }
@@ -307,234 +474,24 @@ input[type="text"] {
   min-width: 200px;
 }
 
-@media (max-width: 600px) {
-  .add-item-form {
-    flex-direction: column;
-    gap: 0.75rem;
+/* Rest of the existing styles... */
+</style>
+
+<!-- Print styles -->
+<style>
+@media print {
+  body * {
+    visibility: hidden;
   }
-  
-  .add-item-form input,
-  .category-select {
+  .print-content,
+  .print-content * {
+    visibility: visible;
+  }
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
   }
-  
-  .quantity-input {
-    width: 100%;
-  }
-}
-
-.item-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  flex-wrap: wrap;
-}
-
-.item-name {
-  font-weight: bold;
-  flex: 1;
-  min-width: 200px;
-}
-
-.item-category {
-  color: #4CAF50;
-  font-weight: 500;
-}
-
-.item-quantity {
-  color: #666;
-  white-space: nowrap;
-}
-
-.item-comment {
-  color: #666;
-  font-style: italic;
-}
-
-.add-item-form button {
-  padding: 0.75rem 1.5rem;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.add-item-form button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.items-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background-color: #f5f5f5;
-  margin-bottom: 0.5rem;
-  border-radius: 4px;
-}
-
-.remove-btn {
-  background: none;
-  border: none;
-  color: #ff4444;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0 0.5rem;
-}
-
-.save-button {
-  width: 100%;
-  padding: 1rem;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin-top: 2rem;
-}
-
-.save-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.error-message {
-  color: #ff4444;
-  margin-top: 1rem;
-  text-align: center;
-}
-
-/* Modal styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal {
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 95%;
-  max-width: 500px;
-  text-align: center;
-  margin: 1rem;
-}
-
-@media (max-width: 600px) {
-  .modal {
-    padding: 1rem;
-  }
-  
-  .share-url-container {
-    flex-direction: column;
-  }
-  
-  .modal-actions {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .view-list-button,
-  .close-button {
-    width: 100%;
-  }
-}
-
-.modal h2 {
-  color: #4CAF50;
-  margin-bottom: 1rem;
-}
-
-.modal-description {
-  color: #666;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
-}
-
-.share-url-container {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.share-url-input {
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  background-color: #f5f5f5;
-}
-
-.copy-button {
-  padding: 0.75rem 1.5rem;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  min-width: 100px;
-  transition: background-color 0.3s;
-}
-
-.copy-button.copied {
-  background-color: #45a049;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-}
-
-.view-list-button {
-  padding: 0.75rem 1.5rem;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.close-button {
-  padding: 0.75rem 1.5rem;
-  background-color: #f5f5f5;
-  color: #666;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-h1 {
-  color: #333;
-  margin-bottom: 2rem;
-}
-
-h2 {
-  color: #333;
-  font-size: 1.3rem;
-  margin-bottom: 1rem;
-  text-align: left;
 }
 </style>

@@ -26,9 +26,15 @@ import { supabase } from '../lib/supabase'
  * @returns {Promise<GroceryList>}
  */
 export async function createList(name) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+
   const { data, error } = await supabase
     .from('grocery_lists')
-    .insert([{ name }])
+    .insert([{ 
+      name,
+      user_id: user.id
+    }])
     .select()
     .single()
 
@@ -43,6 +49,19 @@ export async function createList(name) {
  * @returns {Promise<GroceryItem[]>}
  */
 export async function addItems(listId, items) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+
+  // Verify the list belongs to the current user
+  const { error: listError } = await supabase
+    .from('grocery_lists')
+    .select('id')
+    .eq('id', listId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (listError) throw new Error('Unauthorized: This list does not belong to you')
+
   // Pre-process items to handle the reversal issue
   const itemsWithListId = items.map(item => ({
     ...item,
@@ -51,6 +70,7 @@ export async function addItems(listId, items) {
     list_id: listId
   }))
 
+  // If we get here, the user owns the list, so we can add items
   const { data, error } = await supabase
     .from('grocery_items')
     .insert(itemsWithListId)
@@ -66,7 +86,7 @@ export async function addItems(listId, items) {
  * @returns {Promise<{ list: GroceryList, items: GroceryItem[] }>}
  */
 export async function getList(listId) {
-  // Get the list
+  // Get the list (no ownership check - anyone with link can view)
   const { data: list, error: listError } = await supabase
     .from('grocery_lists')
     .select()
@@ -75,7 +95,6 @@ export async function getList(listId) {
 
   if (listError) throw listError
 
-  // Get the items
   const { data: items, error: itemsError } = await supabase
     .from('grocery_items')
     .select()
@@ -93,6 +112,7 @@ export async function getList(listId) {
  * @returns {Promise<void>}
  */
 export async function updateItemPurchased(itemId, purchased) {
+  // Anyone with the link can update purchase status
   const { error } = await supabase
     .from('grocery_items')
     .update({ purchased })
@@ -108,6 +128,7 @@ export async function updateItemPurchased(itemId, purchased) {
  * @returns {Promise<void>}
  */
 export async function addItemReply(itemId, reply) {
+  // Anyone with the link can add replies to items
   const { error } = await supabase
     .from('grocery_items')
     .update({ reply })
@@ -121,9 +142,13 @@ export async function addItemReply(itemId, reply) {
  * @returns {Promise<GroceryList[]>}
  */
 export async function getAllLists() {
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+
   const { data, error } = await supabase
     .from('grocery_lists')
     .select()
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
   if (error) throw error
