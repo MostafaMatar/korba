@@ -6,7 +6,7 @@
       
       <div class="hero-actions">
         <router-link to="/create" class="try-free-btn">Create your first grocery list for free</router-link>
-        <router-link to="/register" class="get-pro-btn">Subscribe for extra features</router-link>
+        <router-link to="/register" class="get-pro-btn">Get Pro Access</router-link>
       </div>
     </section>
 
@@ -52,8 +52,8 @@
         <div class="feature-column pro">
           <div class="pro-badge">Recommended</div>
           <h3>Pro Account</h3>
-          <p class="price">$5/year</p>
-          <p class="access-note">Full access to all features</p>
+          <p class="price">$10</p>
+          <p class="access-note">Lifetime access to all features</p>
           <ul>
             <li>
               <span class="check">✓</span>
@@ -81,7 +81,7 @@
             </li>
           </ul>
           <router-link to="/register" class="feature-btn pro-btn">
-            Subscribe Now
+            Get Lifetime Access
           </router-link>
         </div>
       </div>
