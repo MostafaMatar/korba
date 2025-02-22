@@ -1,10 +1,11 @@
 <template>
   <div class="register-container">
     <div class="register-card">
-      <h1>Subscribe to Pro</h1>
-      <p>Subscribe now to our pro features to keep your grocery lists forever and gain insights on your shopping habits</p>
+      <h1>Create Your Account</h1>
+      <p v-if="!sessionId">Complete your payment to create your premium account</p>
+      <p v-else>Set up your account credentials</p>
 
-      <form @submit.prevent="handleRegister" class="register-form">
+      <form v-if="sessionId" @submit.prevent="handleRegister" class="register-form">
         <div class="form-group">
           <label for="username">Username</label>
           <input
@@ -46,7 +47,7 @@
         </div>
 
         <button type="submit" :disabled="loading" class="register-button">
-          {{ loading ? 'Creating Account...' : getButtonText() }}
+          {{ loading ? 'Creating Account...' : 'Create Account' }}
         </button>
 
         <p class="login-link">
@@ -54,16 +55,30 @@
           <router-link to="/login">Log in</router-link>
         </p>
       </form>
+
+      <div v-else class="redirect-section">
+        <p class="redirect-message">You'll need a premium account to continue</p>
+        <button @click="goToPayment" class="payment-button">
+          Continue to Payment - $9.99
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { ref } from 'vue'
+import { supabase } from '../lib/supabase'
 
 export default {
   name: 'RegisterUser',
-  setup() {
+  props: {
+    sessionId: {
+      type: String,
+      default: ''
+    }
+  },
+  setup(props) {
     const loading = ref(false);
     const error = ref(null);
     const form = ref({
@@ -72,8 +87,8 @@ export default {
       password: ''
     });
 
-    const getButtonText = () => {
-      return loading.value ? 'Creating Account...' : 'Subscribe Now - $5/year';
+    const goToPayment = () => {
+      window.location.href = '/payment-plan';
     };
 
     const handleRegister = async () => {
@@ -86,6 +101,24 @@ export default {
         if (!emailRegex.test(form.value.email)) {
           throw new Error('Please enter a valid email address');
         }
+
+        // Register user with Supabase
+        const { error: authError } = await supabase.auth.signUp({
+          email: form.value.email,
+          password: form.value.password,
+          options: {
+            data: {
+              username: form.value.username,
+              stripe_session: props.sessionId,
+              is_premium: true
+            }
+          }
+        })
+
+        if (authError) throw authError
+
+        // Redirect to verification page
+        window.location.href = '/verification'
       } catch (e) {
         error.value = e.message
       } finally {
@@ -98,7 +131,7 @@ export default {
       loading,
       error,
       handleRegister,
-      getButtonText
+      goToPayment
     }
   }
 }
@@ -120,91 +153,20 @@ export default {
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 800px;
-}
-
-h1, h2 {
-  color: #2E7D32;
-  text-align: center;
-  margin-bottom: 2rem;
+  max-width: 600px;
 }
 
 h1 {
+  color: #2E7D32;
+  text-align: center;
+  margin-bottom: 1rem;
   font-size: 2rem;
 }
 
-h2 {
-  font-size: 1.5rem;
-  margin-top: 2rem;
-}
-
-.plan-selection {
+p {
+  text-align: center;
+  color: #666;
   margin-bottom: 2rem;
-}
-
-.plans {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.plan-card {
-  background: #f8f8f8;
-  padding: 2rem;
-  border-radius: 12px;
-  border: 2px solid #e0e0e0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.plan-card.selected {
-  border-color: #4CAF50;
-  background: #f1f8e9;
-}
-
-.pro-badge {
-  position: absolute;
-  top: -12px;
-  right: -12px;
-  background: #4CAF50;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: bold;
-}
-
-.plan-card h3 {
-  color: #2E7D32;
-  margin-bottom: 1rem;
-}
-
-.plan-card .price {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #2E7D32;
-  margin-bottom: 1rem;
-}
-
-.plan-card ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.plan-card ul li {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.plan-card ul li::before {
-  content: '✓';
-  color: #4CAF50;
-  font-weight: bold;
 }
 
 .register-form {
@@ -255,7 +217,7 @@ small {
   font-size: 0.875rem;
 }
 
-.register-button {
+.register-button, .payment-button {
   background-color: #4CAF50;
   color: white;
   border: none;
@@ -265,13 +227,16 @@ small {
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  width: 100%;
 }
 
-.register-button:hover:not(:disabled) {
+.register-button:hover:not(:disabled),
+.payment-button:hover:not(:disabled) {
   background-color: #43A047;
 }
 
-.register-button:disabled {
+.register-button:disabled,
+.payment-button:disabled {
   background-color: #9E9E9E;
   cursor: not-allowed;
 }
@@ -279,6 +244,7 @@ small {
 .login-link {
   text-align: center;
   color: #666;
+  margin-top: 1rem;
 }
 
 .login-link a {
@@ -291,13 +257,22 @@ small {
   text-decoration: underline;
 }
 
+.redirect-section {
+  text-align: center;
+}
+
+.redirect-message {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
 @media (max-width: 768px) {
   .register-card {
     padding: 1.5rem;
   }
 
-  .plans {
-    grid-template-columns: 1fr;
+  h1 {
+    font-size: 1.75rem;
   }
 }
 </style>

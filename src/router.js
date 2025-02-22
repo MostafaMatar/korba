@@ -5,6 +5,8 @@ import ContactForm from './components/ContactForm.vue'
 import CreateList from './components/CreateList.vue'
 import ViewList from './components/ViewList.vue'
 import RegisterUser from './components/RegisterUser.vue'
+import PaymentPlan from './components/PaymentPlan.vue'
+import PaymentFailure from './components/PaymentFailure.vue'
 import VerifyUser from './components/VerifyUser.vue'
 import LogIn from './components/LogIn.vue'
 import ViewDashboard from './components/ViewDashboard.vue'
@@ -29,7 +31,10 @@ const routes = [
   {
     path: '/register',
     name: 'register',
-    component: RegisterUser
+    component: RegisterUser,
+  props: route => ({
+    sessionId: route.query.session_id
+  })
   },
   {
     path: '/verification',
@@ -52,6 +57,16 @@ const routes = [
     name: 'contact',
     component: ContactForm,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/payment-plan',
+    name: 'payment-plan',
+    component: PaymentPlan
+  },
+  {
+    path: '/payment-failed',
+    name: 'payment-failed',
+    component: PaymentFailure
   }
 ]
 
