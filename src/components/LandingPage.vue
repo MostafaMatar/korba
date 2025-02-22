@@ -5,7 +5,7 @@
       <p class="subtitle">Create and manage your grocery lists efficiently and share them with your loved ones</p>
       
       <div class="hero-actions">
-        <router-link to="/create" class="try-free-btn">Create your first grocery list for free</router-link>
+        <router-link to="/create-list" class="try-free-btn">Create your first grocery list for free</router-link>
         <router-link to="/register" class="get-pro-btn">Get Pro Access</router-link>
       </div>
     </section>

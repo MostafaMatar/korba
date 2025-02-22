@@ -1,16 +1,6 @@
 <template>
   <div class="create-list">
     <h1>Create New Grocery List</h1>
-    
-    <!-- Basic Features Banner for Unauthenticated Users -->
-    <div v-if="!isAuthenticated" class="basic-features-banner">
-      <p>
-        You're using basic features. 
-        <router-link to="/register" class="upgrade-link">Upgrade to Pro</router-link> 
-        to save lists and access advanced features!
-      </p>
-    </div>
-
     <div class="list-form">
       <div class="form-group">
         <label for="listName">List Name</label>
@@ -21,9 +11,32 @@
           placeholder="e.g., Weekly Groceries"
         >
       </div>
+
+      <div v-if="isAuthenticated" class="form-group-row">
+        <div class="form-group">
+          <label for="purchaseDate">Planned Shopping Date</label>
+          <input 
+            type="date"
+            id="purchaseDate"
+            v-model="purchaseDate"
+            :min="new Date().toISOString().split('T')[0]"
+            placeholder="Select when you plan to shop"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="store">Preferred Store</label>
+          <input 
+            type="text"
+            id="store"
+            v-model="store"
+            placeholder="e.g., Walmart"
+          >
+        </div>
+      </div>
       
       <div class="items-section">
-        <h2>Add Items</h2>
+        <h2 class="section-title">Add Items</h2>
         <div class="add-item-form">
           <input 
             type="text"
@@ -56,49 +69,41 @@
             class="comment-input"
             @keyup.enter="addItem"
           >
-          <button @click="addItem" :disabled="!newItemForm.name.trim() || !newItemForm.category">Add</button>
+          <button 
+            @click="addItem" 
+            :disabled="!newItemForm.name.trim() || !newItemForm.category"
+            class="add-button"
+          >
+            Add
+          </button>
         </div>
 
-        <ul class="items-list">
-          <li v-for="(item, index) in items" :key="index" class="item">
-            <div class="item-info">
-              <span class="item-name">{{ item.name }}</span>
-              <span class="item-category">{{ getCategoryLabel(item.category) }}</span>
-              <span class="item-quantity">Qty: {{ item.quantity }}</span>
-              <span class="item-comment" v-if="item.comment">Note: {{ item.comment }}</span>
+        <div class="items-list">
+          <div v-for="(item, index) in items" :key="index" class="item">
+            <div class="item-content">
+              <div class="item-details">
+                <div class="item-main">
+                  <span class="item-name">{{ item.name }}</span>
+                  <span class="item-quantity">Qty: {{ item.quantity }}</span>
+                  <span v-if="item.comment" class="item-comment">Note: {{ item.comment }}</span>
+                </div>
+                <div class="item-category">{{ getCategoryLabel(item.category) }}</div>
+              </div>
+              <button class="remove-btn" @click="removeItem(index)">×</button>
             </div>
-            <button class="remove-btn" @click="removeItem(index)">×</button>
-          </li>
-        </ul>
+          </div>
+        </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="action-buttons">
         <button 
-          v-if="isAuthenticated"
           class="save-button"
           @click="saveList"
           :disabled="!listName.trim() || items.length === 0 || saving"
         >
           {{ saving ? 'Saving...' : 'Save List' }}
         </button>
-
-        <button 
-          v-else
-          class="print-button"
-          @click="printList"
-          :disabled="!listName.trim() || items.length === 0"
-        >
-          Print List
-        </button>
-
-        <router-link 
-          v-if="!isAuthenticated" 
-          to="/register" 
-          class="upgrade-button"
-        >
-          Upgrade to Save Lists
-        </router-link>
       </div>
 
       <p v-if="error" class="error-message">
@@ -208,7 +213,9 @@ export default {
       showPrintModal: false,
       savedListId: null,
       urlCopied: false,
-      isAuthenticated: false
+      isAuthenticated: false,
+      purchaseDate: '',
+      store: ''
     }
   },
   async created() {
@@ -259,7 +266,7 @@ export default {
       this.error = null
 
       try {
-        const list = await createList(this.listName)
+        const list = await createList(this.listName, this.purchaseDate, this.store)
         await addItems(list.id, this.items)
         this.savedListId = list.id
         this.showShareModal = true
@@ -415,6 +422,32 @@ export default {
   margin-bottom: 2rem;
 }
 
+.section-title {
+  color: #2E7D32;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.add-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-button:hover:not(:disabled) {
+  background-color: #43A047;
+}
+
+.add-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
 label {
   display: block;
   margin-bottom: 0.5rem;
@@ -423,12 +456,45 @@ label {
   text-align: left;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="date"],
+input[type="number"] {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+  background-color: white;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus,
+select:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+/* Custom styling for date input */
+input[type="date"] {
+  /* Remove default date input styling */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Style the calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  background-color: transparent;
+  padding: 0.3rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 .items-section {
@@ -448,7 +514,6 @@ input[type="text"] {
   border-radius: 4px;
   font-size: 1rem;
 }
-
 .add-item-form input[type="text"] {
   flex: 1;
   min-width: 200px;
@@ -474,7 +539,100 @@ input[type="text"] {
   min-width: 200px;
 }
 
-/* Rest of the existing styles... */
+/* Items List Styles */
+.items-list {
+  margin-top: 1rem;
+}
+
+.item {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.item-details {
+  flex: 1;
+  text-align: left;
+}
+
+.item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.item-name {
+  font-weight: bold;
+  flex: 1;
+  min-width: 200px;
+}
+
+.item-quantity {
+  color: #666;
+  white-space: nowrap;
+}
+
+.item-comment {
+  color: #666;
+  font-style: italic;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.item-category {
+  color: #4CAF50;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border: 1px solid #ff4444;
+  border-radius: 4px;
+  color: #ff4444;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+  opacity: 1;
+  background: #ff4444;
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .item-main {
+    gap: 0.25rem;
+  }
+  
+  .item-name {
+    min-width: unset;
+    width: 100%;
+  }
+  
+  .item-details {
+    width: 100%;
+  }
+}
 </style>
 
 <!-- Print styles -->

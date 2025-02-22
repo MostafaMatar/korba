@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase'
  * @property {string} name - List name
  * @property {string} created_at - Timestamp
  * @property {string} user_id - User ID (for future auth)
+ * @property {string} [purchase_date] - Date when items need to be bought
+ * @property {string} [store] - Preferred store for shopping
  */
 
 /**
@@ -25,7 +27,7 @@ import { supabase } from '../lib/supabase'
  * @param {string} name 
  * @returns {Promise<GroceryList>}
  */
-export async function createList(name) {
+export async function createList(name, purchaseDate = null, store = null) {
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError) throw userError
 
@@ -33,7 +35,9 @@ export async function createList(name) {
     .from('grocery_lists')
     .insert([{ 
       name,
-      user_id: user.id
+      user_id: user.id,
+      purchase_date: purchaseDate,
+      store: store
     }])
     .select()
     .single()

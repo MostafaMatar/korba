@@ -7,6 +7,16 @@
         <h1>{{ list.name }}</h1>
         <div class="list-stats">
           <span class="stat">{{ completedItems }} of {{ list.items.length }} items purchased</span>
+          <div v-if="isAuthenticated" class="list-details">
+            <div v-if="list.purchase_date" class="detail">
+              <span class="detail-label">🗓️ Purchase Date:</span>
+              <span class="detail-value">{{ formatDate(list.purchase_date) }}</span>
+            </div>
+            <div v-if="list.store" class="detail">
+              <span class="detail-label">🏪 Store:</span>
+              <span class="detail-value">{{ list.store }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -65,6 +75,7 @@
 
 <script>
 import { getList, updateItemPurchased, addItemReply } from '../services/groceryService'
+import { supabase } from '../lib/supabase'
 
 export default {
   name: 'ViewList',
@@ -79,6 +90,7 @@ export default {
       list: null,
       loading: true,
       error: null,
+      isAuthenticated: false,
       categories: [
         { value: 'produce', label: '🥬 Produce' },
         { value: 'dairy', label: '🥛 Dairy' },
@@ -93,6 +105,9 @@ export default {
     }
   },
   async created() {
+    const { data: { session } } = await supabase.auth.getSession()
+    this.isAuthenticated = !!session
+
     try {
       const { list, items } = await getList(this.id)
       this.list = {
@@ -164,6 +179,15 @@ export default {
         item.savingReply = false
       }
     },
+    formatDate(dateString) {
+      if (!dateString) return '';
+      return new Date(dateString).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    },
     getCategoryLabel(categoryValue) {
       const category = this.categories.find(c => c.value === categoryValue)
       return category ? category.label : categoryValue
@@ -219,6 +243,27 @@ export default {
 .list-stats {
   color: #666;
   font-size: 0.9rem;
+}
+
+.list-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.detail {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #4CAF50;
+}
+
+.detail-value {
+  color: #333;
 }
 
 .category-section {
