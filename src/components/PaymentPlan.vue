@@ -54,10 +54,17 @@ export default {
         const stripe = await loadStripe(process.env.VUE_APP_STRIPE_PUBLIC_KEY)
         
         // Redirect to Stripe payment page
-        // Get base URL based on environment
-        const baseURL = process.env.NODE_ENV === 'production' 
-          ? process.env.VUE_APP_URL
-          : 'http://localhost:8080';
+        // Ensure we have a properly formatted base URL
+        const isProd = process.env.NODE_ENV === 'production';
+        let baseURL = isProd ? process.env.VUE_APP_URL : 'http://localhost:8080';
+        
+        // Ensure URL starts with http(s)://
+        if (!baseURL.startsWith('http://') && !baseURL.startsWith('https://')) {
+          baseURL = `https://${baseURL}`;
+        }
+        
+        // Remove trailing slash if present
+        baseURL = baseURL.replace(/\/$/, '');
 
         const { error } = await stripe.redirectToCheckout({
           lineItems: [{

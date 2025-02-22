@@ -58,14 +58,26 @@ export default {
       try {
         const stripe = await loadStripe(process.env.VUE_APP_STRIPE_PUBLIC_KEY)
         
+        // Ensure we have a properly formatted base URL
+        const isProd = process.env.NODE_ENV === 'production';
+        let baseURL = isProd ? process.env.VUE_APP_URL : 'http://localhost:8080';
+        
+        // Ensure URL starts with http(s)://
+        if (!baseURL.startsWith('http://') && !baseURL.startsWith('https://')) {
+          baseURL = `https://${baseURL}`;
+        }
+        
+        // Remove trailing slash if present
+        baseURL = baseURL.replace(/\/$/, '');
+
         const { error } = await stripe.redirectToCheckout({
           lineItems: [{
             price: process.env.VUE_APP_STRIPE_PRICE_ID,
             quantity: 1,
           }],
           mode: 'payment',
-          successUrl: `${window.location.origin}/register?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/payment-failed`,
+          successUrl: `${baseURL}/register?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${baseURL}/payment-failed`,
         })
 
         if (error) {
