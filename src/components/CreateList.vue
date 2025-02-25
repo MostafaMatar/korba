@@ -142,7 +142,7 @@
       </div>
     </div>
 
-    <!-- Share Modal (for authenticated users) -->
+    <!-- Share Modal -->
     <div v-if="showShareModal" class="modal-overlay" @click="closeModal">
       <div class="modal" @click.stop>
         <h2>List Created Successfully! 🎉</h2>
@@ -415,6 +415,106 @@ export default {
 .print-comment {
   color: #666;
   font-style: italic;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal h2 {
+  color: #2E7D32;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.modal-description {
+  color: #666;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.share-url-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.share-url-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #666;
+  background: #f5f5f5;
+}
+
+.copy-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.copy-button.copied {
+  background-color: #43A047;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.view-list-button,
+.close-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.view-list-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.view-list-button:hover {
+  background-color: #43A047;
+}
+
+.close-button {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.close-button:hover {
+  background-color: #bdbdbd;
 }
 
 /* Existing styles... */

@@ -7,22 +7,7 @@
       </div>
       
       <div class="filter-section">
-        <div class="date-filter">
-          <label for="dateFilter">Filter by date:</label>
-          <input 
-            type="date" 
-            id="dateFilter"
-            v-model="dateFilter"
-            :max="today"
-          >
-          <button 
-            v-if="dateFilter"
-            @click="clearFilter" 
-            class="clear-filter"
-          >
-            Clear
-          </button>
-        </div>
+        <DateRangeFilter v-model="dateRange" />
       </div>
     </div>
 
@@ -35,7 +20,7 @@
     </div>
 
     <div v-else-if="filteredLists.length === 0" class="no-lists">
-      <p>No grocery lists found{{ dateFilter ? ' for selected date' : '' }}.</p>
+      <p>No grocery lists found{{ dateRange.start ? ' for selected date range' : '' }}.</p>
       <router-link to="/create-list" class="create-list-button">
         Create Your First List
       </router-link>
@@ -53,47 +38,92 @@
             Created: {{ formatDate(list.created_at) }}
           </p>
         </div>
-        <router-link 
-          :to="{ name: 'view-list', params: { id: list.id }}" 
-          class="view-button"
-        >
-          View Details
-        </router-link>
+        <div class="list-actions">
+          <router-link 
+            :to="{ name: 'view-list', params: { id: list.id }}" 
+            class="view-button"
+          >
+            View Details
+          </router-link>
+          <button 
+            @click="openDeleteModal(list)"
+            class="delete-button"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
 
     <router-link to="/create-list" class="fab-button">
-      + New List
+      +
     </router-link>
+
+    <!-- Confirmation Modal -->
+    <div v-if="showDeleteModal" class="modal-overlay">
+      <div class="modal">
+        <h3>Delete List</h3>
+        <p>Are you sure you want to delete this list? This action cannot be undone.</p>
+        <div class="modal-actions">
+          <button 
+            @click="confirmDelete"
+            class="confirm-button"
+            :disabled="deleteInProgress"
+          >
+            {{ deleteInProgress ? 'Deleting...' : 'Delete' }}
+          </button>
+          <button 
+            @click="closeDeleteModal"
+            class="cancel-button"
+            :disabled="deleteInProgress"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '../lib/supabase'
-import { getAllLists } from '../services/groceryService'
+import DateRangeFilter from './DateRangeFilter.vue'
 
 export default {
   name: 'ViewDashboard',
+  components: {
+    DateRangeFilter
+  },
   setup() {
     const lists = ref([])
     const loading = ref(true)
     const error = ref(null)
     const username = ref('')
-    const dateFilter = ref('')
-
     const today = new Date().toISOString().split('T')[0]
 
-    const filteredLists = computed(() => {
-      if (!dateFilter.value) return lists.value
+    // Delete modal state
+    const showDeleteModal = ref(false)
+    const selectedList = ref(null)
+    const deleteInProgress = ref(false)
 
-      const selectedDate = new Date(dateFilter.value)
-      selectedDate.setHours(0, 0, 0, 0)
+    // Date range filter
+    const dateRange = ref({
+      start: new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0],
+      end: today
+    })
+
+    const filteredLists = computed(() => {
+      if (!dateRange.value.start || !dateRange.value.end) return lists.value
+
+      const start = new Date(dateRange.value.start)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(dateRange.value.end)
+      end.setHours(23, 59, 59, 999)
 
       return lists.value.filter(list => {
         const listDate = new Date(list.created_at)
-        listDate.setHours(0, 0, 0, 0)
-        return listDate.getTime() === selectedDate.getTime()
+        return listDate >= start && listDate <= end
       })
     })
 
@@ -123,12 +153,60 @@ export default {
       try {
         loading.value = true
         error.value = null
-        lists.value = await getAllLists()
+        
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Not authenticated')
+
+        const { data, error: listsError } = await supabase
+          .from('grocery_lists')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('created_at', dateRange.value.start)
+          .lte('created_at', new Date(dateRange.value.end + 'T23:59:59').toISOString())
+          .order('created_at', { ascending: false })
+
+        if (listsError) throw listsError
+        lists.value = data || []
       } catch (e) {
         error.value = 'Failed to load grocery lists'
         console.error('Error loading lists:', e)
       } finally {
         loading.value = false
+      }
+    }
+
+    const openDeleteModal = (list) => {
+      selectedList.value = list
+      showDeleteModal.value = true
+    }
+
+    const closeDeleteModal = () => {
+      showDeleteModal.value = false
+      selectedList.value = null
+    }
+
+    const confirmDelete = async () => {
+      if (!selectedList.value) return
+
+      try {
+        deleteInProgress.value = true
+        error.value = null
+
+        const { error: deleteError } = await supabase
+          .from('grocery_lists')
+          .delete()
+          .eq('id', selectedList.value.id)
+
+        if (deleteError) throw deleteError
+
+        // Remove the list from the local array
+        lists.value = lists.value.filter(l => l.id !== selectedList.value.id)
+        closeDeleteModal()
+      } catch (e) {
+        error.value = 'Failed to delete list'
+        console.error('Error deleting list:', e)
+      } finally {
+        deleteInProgress.value = false
       }
     }
 
@@ -142,24 +220,29 @@ export default {
       })
     }
 
-    const clearFilter = () => {
-      dateFilter.value = ''
-    }
-
     onMounted(async () => {
       await Promise.all([loadUserProfile(), loadLists()])
     })
+
+    // Watch for date range changes
+    watch(() => dateRange.value, () => {
+      loadLists()
+    }, { deep: true })
 
     return {
       lists,
       loading,
       error,
       username,
-      dateFilter,
+      dateRange,
       today,
       filteredLists,
       formatDate,
-      clearFilter
+      showDeleteModal,
+      deleteInProgress,
+      openDeleteModal,
+      closeDeleteModal,
+      confirmDelete
     }
   }
 }
@@ -198,36 +281,6 @@ h1 {
   align-items: center;
 }
 
-.date-filter {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.date-filter label {
-  color: #666;
-  font-weight: 600;
-}
-
-.date-filter input {
-  padding: 0.5rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-.clear-filter {
-  background: none;
-  border: none;
-  color: #4CAF50;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.clear-filter:hover {
-  text-decoration: underline;
-}
-
 .lists-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -256,19 +309,39 @@ h1 {
   font-size: 0.9rem;
 }
 
-.view-button {
-  background-color: #4CAF50;
-  color: white;
+.list-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.view-button, .delete-button {
+  flex: 1;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   text-decoration: none;
   text-align: center;
   font-weight: 600;
   transition: background-color 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.view-button {
+  background-color: #4CAF50;
+  color: white;
 }
 
 .view-button:hover {
   background-color: #43A047;
+}
+
+.delete-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #d32f2f;
 }
 
 .loading {
@@ -328,5 +401,79 @@ h1 {
 
 .fab-button:hover {
   transform: scale(1.1);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal h3 {
+  color: #d32f2f;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.modal p {
+  color: #666;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.confirm-button, .cancel-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.confirm-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.confirm-button:hover:not(:disabled) {
+  background-color: #d32f2f;
+}
+
+.cancel-button {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background-color: #bdbdbd;
+}
+
+.confirm-button:disabled,
+.cancel-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 </style>

@@ -13,6 +13,7 @@
             <div class="nav-links">
                 <template v-if="isAuthenticated">
                     <router-link to="/dashboard" class="nav-button">Dashboard</router-link>
+                    <router-link to="/analytics" class="nav-button">Analytics</router-link>
                     <router-link to="/contact" class="nav-button">Contact Us</router-link>
                     <button @click="handleSignOut" class="nav-button logout">Sign Out</button>
                 </template>

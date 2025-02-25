@@ -7,6 +7,7 @@ import ViewList from './components/ViewList.vue'
 import RegisterUser from './components/RegisterUser.vue'
 import PaymentPlan from './components/PaymentPlan.vue'
 import PaymentFailure from './components/PaymentFailure.vue'
+import UserAnalytics from './components/UserAnalytics.vue'
 import VerifyUser from './components/VerifyUser.vue'
 import LogIn from './components/LogIn.vue'
 import ViewDashboard from './components/ViewDashboard.vue'
@@ -67,6 +68,12 @@ const routes = [
     path: '/payment-failed',
     name: 'payment-failed',
     component: PaymentFailure
+  },
+  {
+    path: '/analytics',
+    name: 'analytics',
+    component: UserAnalytics,
+    meta: { requiresAuth: true }
   }
 ]
 
