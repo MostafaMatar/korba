@@ -59,7 +59,7 @@
       <div v-else class="redirect-section">
         <p class="redirect-message">You'll need a premium account to continue</p>
         <button @click="goToPayment" class="payment-button">
-          Continue to Payment - $9.99
+          Continue to Payment - $10.00
         </button>
       </div>
     </div>
