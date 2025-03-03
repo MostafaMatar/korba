@@ -15,7 +15,7 @@
       </div>
 
       <div class="plan-price">
-        <span class="price">$9.99</span>
+        <span class="price">$10.00</span>
         <span class="period">one-time payment</span>
       </div>
 
