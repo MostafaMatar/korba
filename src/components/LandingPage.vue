@@ -2,11 +2,11 @@
   <div class="landing-page">
     <section class="hero">
       <h1>Korba - Smart Grocery Management</h1>
-      <p class="subtitle">Create and manage your grocery lists efficiently and share them with your loved ones</p>
+      <p class="subtitle">Create and manage your grocery lists fast and efficient and share them with your loved ones via a simple link</p>
       
       <div class="hero-actions">
-        <router-link to="/create-list" class="try-free-btn">Create your first grocery list for free</router-link>
-        <router-link to="/register" class="get-pro-btn">Get Pro Access</router-link>
+        <router-link to="/create-list" class="try-free-btn">PLAN YOUR GROCERIES FOR FREE</router-link>
+        <router-link to="/register" class="get-pro-btn">GET PRO FEATURES</router-link>
       </div>
     </section>
 
