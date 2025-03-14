@@ -114,8 +114,6 @@ export default {
         ...list,
         items: items.map(item => ({
           ...item,
-          // Reverse the name back to its original form
-          name: item.name.split('').reverse().join(''),
           savingReply: false
         }))
       }

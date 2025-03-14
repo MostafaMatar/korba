@@ -88,11 +88,9 @@ export async function addItems(listId, items) {
     }
   }
 
-  // Pre-process items to handle the reversal issue
+  // Add list_id to items
   const itemsWithListId = items.map(item => ({
     ...item,
-    // Reverse the name string to counteract the reversal issue
-    name: item.name.split('').reverse().join(''),
     list_id: listId
   }))
 

@@ -412,9 +412,7 @@ export default {
         if (Array.isArray(list.grocery_items)) {
           list.grocery_items.forEach(item => {
             if (item && item.name) {
-              // Reverse the item name that's stored reversed in the database
-              const correctedName = item.name.split('').reverse().join('')
-              itemsMap[correctedName] = (itemsMap[correctedName] || 0) + 1
+              itemsMap[item.name] = (itemsMap[item.name] || 0) + 1
             }
           })
         }

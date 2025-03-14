@@ -237,9 +237,8 @@ export default {
     addItem() {
       const trimmedName = this.newItemForm.name.trim();
       if (trimmedName && this.newItemForm.category) {
-        const itemName = [...trimmedName].map(char => String.fromCharCode(char.charCodeAt(0))).join('');
         this.items.push({
-          name: itemName,
+          name: trimmedName,
           category: this.newItemForm.category,
           quantity: this.newItemForm.quantity,
           comment: this.newItemForm.comment.trim()
