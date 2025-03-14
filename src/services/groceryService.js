@@ -5,9 +5,9 @@ import { supabase } from '../lib/supabase'
  * @property {string} id - UUID
  * @property {string} name - List name
  * @property {string} created_at - Timestamp
- * @property {string} user_id - User ID (for future auth)
- * @property {string} [purchase_date] - Date when items need to be bought
- * @property {string} [store] - Preferred store for shopping
+ * @property {string} [user_id] - Optional user ID for authenticated users
+ * @property {string} [purchase_date] - Optional date when items need to be bought
+ * @property {string} [store] - Optional preferred store for shopping
  */
 
 /**
@@ -23,22 +23,37 @@ import { supabase } from '../lib/supabase'
  */
 
 /**
- * Create a new grocery list
- * @param {string} name 
- * @returns {Promise<GroceryList>}
+ * Create a new grocery list. If user is authenticated, the list will be linked to their account.
+ * If not authenticated, creates an anonymous list.
+ * @param {string} name - List name
+ * @param {string|null} [purchaseDate=null] - Optional date when items need to be bought
+ * @param {string|null} [store=null] - Optional preferred store for shopping
+ * @returns {Promise<GroceryList>} The created grocery list
  */
 export async function createList(name, purchaseDate = null, store = null) {
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError) throw userError
+  // Try to get user but don't require authentication
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Create list object with required fields
+  const listData = { name }
+  
+  // Add optional fields only if they have valid values
+  if (purchaseDate) {
+    listData.purchase_date = purchaseDate
+  }
+  
+  if (store) {
+    listData.store = store
+  }
+  
+  // Add user_id if authenticated
+  if (user) {
+    listData.user_id = user.id
+  }
 
   const { data, error } = await supabase
     .from('grocery_lists')
-    .insert([{ 
-      name,
-      user_id: user.id,
-      purchase_date: purchaseDate,
-      store: store
-    }])
+    .insert([listData])
     .select()
     .single()
 
@@ -47,24 +62,31 @@ export async function createList(name, purchaseDate = null, store = null) {
 }
 
 /**
- * Add items to a grocery list
- * @param {string} listId 
- * @param {Array<Omit<GroceryItem, 'id' | 'list_id'>>} items 
+ * Add items to a grocery list. If the list belongs to an authenticated user,
+ * only that user can add items. Anonymous lists can be modified by anyone.
+ * @param {string} listId - ID of the grocery list
+ * @param {Array<Omit<GroceryItem, 'id' | 'list_id'>>} items - Array of items to add
  * @returns {Promise<GroceryItem[]>}
  */
 export async function addItems(listId, items) {
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError) throw userError
+  // Try to get user but don't require authentication
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // Verify the list belongs to the current user
-  const { error: listError } = await supabase
-    .from('grocery_lists')
-    .select('id')
-    .eq('id', listId)
-    .eq('user_id', user.id)
-    .single()
+  // If user is authenticated, verify ownership
+  if (user) {
+    const { data: list, error: listError } = await supabase
+      .from('grocery_lists')
+      .select('id, user_id')
+      .eq('id', listId)
+      .single()
 
-  if (listError) throw new Error('Unauthorized: This list does not belong to you')
+    if (listError) throw listError
+
+    // If list has a user_id, verify it matches current user
+    if (list.user_id && list.user_id !== user.id) {
+      throw new Error('Unauthorized: This list does not belong to you')
+    }
+  }
 
   // Pre-process items to handle the reversal issue
   const itemsWithListId = items.map(item => ({

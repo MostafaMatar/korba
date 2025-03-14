@@ -257,10 +257,6 @@ export default {
       this.items.splice(index, 1)
     },
     async saveList() {
-      if (!this.isAuthenticated) {
-        this.error = 'You need a Pro account to save lists'
-        return
-      }
 
       this.saving = true
       this.error = null
