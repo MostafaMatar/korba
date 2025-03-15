@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from './lib/supabase'
 import LandingPage from './components/LandingPage.vue'
+import PrivacyPolicy from './components/PrivacyPolicy.vue'
 import ContactForm from './components/ContactForm.vue'
 import CreateList from './components/CreateList.vue'
 import ViewList from './components/ViewList.vue'
@@ -17,6 +18,11 @@ const routes = [
     path: '/',
     name: 'home',
     component: LandingPage
+  },
+  {
+    path: '/privacy-policy',
+    name: 'privacy-policy',
+    component: PrivacyPolicy
   },
   {
     path: '/create-list',

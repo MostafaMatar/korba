@@ -42,6 +42,18 @@
           <small>Password must be at least 6 characters long</small>
         </div>
 
+        <div class="form-group privacy-agreement">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              v-model="form.privacyAgreed"
+              required
+              :disabled="loading"
+            />
+            I agree to the <router-link to="/privacy-policy" target="_blank">Privacy Policy</router-link>
+          </label>
+        </div>
+
         <div v-if="error" class="error-message">
           {{ error }}
         </div>
@@ -84,7 +96,8 @@ export default {
     const form = ref({
       username: '',
       email: '',
-      password: ''
+      password: '',
+      privacyAgreed: false
     });
 
     const goToPayment = () => {
@@ -100,6 +113,11 @@ export default {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(form.value.email)) {
           throw new Error('Please enter a valid email address');
+        }
+
+        // Validate privacy policy agreement
+        if (!form.value.privacyAgreed) {
+          throw new Error('You must agree to the Privacy Policy to continue');
         }
 
         // Register user with Supabase
@@ -254,6 +272,35 @@ small {
 }
 
 .login-link a:hover {
+  text-decoration: underline;
+}
+
+.privacy-agreement {
+  display: flex;
+  align-items: center;
+  margin: 0.5rem 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkbox-label a {
+  color: #4CAF50;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.checkbox-label a:hover {
   text-decoration: underline;
 }
 
