@@ -30,7 +30,7 @@
           Your account has been created successfully. You can now access all Pro features.
         </p>
         <div class="action-buttons">
-          <router-link to="/create" class="start-button">
+          <router-link to="/create-list" class="start-button">
             Create Your First List
           </router-link>
           <router-link to="/dashboard" class="dashboard-button">

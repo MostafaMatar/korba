@@ -44,7 +44,7 @@
               Basic features only
             </li>
           </ul>
-          <router-link to="/create" class="feature-btn basic-btn">
+          <router-link to="/create-list" class="feature-btn basic-btn">
             Start Free Trial
           </router-link>
         </div>
